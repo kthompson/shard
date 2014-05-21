@@ -1,9 +1,9 @@
-namespace Shard
+namespace Shard.Storage
 {
     /// <summary>
     /// Object Type used to represent the different object types used in storage.
     /// </summary>
-    public enum ObjectType : byte
+    enum ObjectType : byte
     {
         /// <summary>
         /// Used for an unspecified object type

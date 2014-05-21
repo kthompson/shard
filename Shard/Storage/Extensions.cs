@@ -4,12 +4,12 @@ using System.IO;
 using System.Net;
 using System.Text;
 
-namespace Shard
+namespace Shard.Storage
 {
     /// <summary>
     /// Extensions for miscellaneous things
     /// </summary>
-    public static class Extensions
+    static class Extensions
     {
         /// <summary>
         /// Read a 7bit encoded int from a stream.

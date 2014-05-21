@@ -6,7 +6,10 @@ using System.Threading.Tasks;
 
 namespace Shard
 {
-    public class Class1
+    class MetadataWrapper<T>
     {
+        public string Id { get; set; }
+        public string Type { get; set; }
+        public T Source { get; set; }
     }
 }

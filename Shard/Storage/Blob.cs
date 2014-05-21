@@ -5,7 +5,7 @@ namespace Shard.Storage
     /// <summary>
     /// Represents the git object Blob that is used to represent files
     /// </summary>
-    public class Blob : AbstractObject
+    class Blob : AbstractObject
     {
         #region Constructors
         internal Blob(string id, long size, Func<byte[]> loader)

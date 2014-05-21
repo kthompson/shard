@@ -4,11 +4,10 @@ using System.Globalization;
 using System.IO;
 using System.Linq;
 using System.Text;
-using System.Threading.Tasks;
 
-namespace Shard
+namespace Shard.Storage
 {
-    internal static class Helper
+    static class Helper
     {
         public static IEnumerable<string> GetLocations(string location)
         {
@@ -26,8 +25,11 @@ namespace Shard
         /// <exception cref="ArgumentNullException"></exception>
         public static String MakeRelativePath(string fromPath, string toPath)
         {
-            if (String.IsNullOrEmpty(fromPath)) throw new ArgumentNullException("fromPath");
-            if (String.IsNullOrEmpty(toPath)) throw new ArgumentNullException("toPath");
+            if (string.IsNullOrEmpty(fromPath)) 
+                throw new ArgumentNullException("fromPath");
+
+            if (string.IsNullOrEmpty(toPath)) 
+                throw new ArgumentNullException("toPath");
 
             if (fromPath[fromPath.Length - 1] != Path.DirectorySeparatorChar)
                 fromPath += Path.DirectorySeparatorChar;
@@ -74,6 +76,12 @@ namespace Shard
             }
 
             return sb.ToString();
+        }
+
+        public static void CreateDirectory(string location)
+        {
+            if (!Directory.Exists(location))
+                Directory.CreateDirectory(location);
         }
     }
 }

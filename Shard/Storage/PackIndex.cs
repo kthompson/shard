@@ -6,7 +6,7 @@ namespace Shard.Storage
     /// <summary>
     /// A <see cref="PackFile"/> Index for fast lookup of objects
     /// </summary>
-    public class PackIndex
+    class PackIndex
     {
         /// <summary>
         /// Gets the location.
@@ -91,19 +91,17 @@ namespace Shard.Storage
                 var reader = new BinaryReader(stream);
 
                 PackIndexEntry entry;
-                if (_entries.TryGetValue(id, out entry))
-                {
-                    reader.BaseStream.Seek(CrcOffset(entry), SeekOrigin.Begin);
-                    var crc = reader.ReadBigEndianInt32();
+                if (!_entries.TryGetValue(id, out entry)) 
+                    return null;
 
-                    reader.BaseStream.Seek(OffsetOffset(entry), SeekOrigin.Begin);
-                    var offset = reader.ReadBigEndianInt32();
+                reader.BaseStream.Seek(CrcOffset(entry), SeekOrigin.Begin);
+                var crc = reader.ReadBigEndianInt32();
 
-                    return new PackIndexEntry(entry.Id, entry.Index, crc, offset);
-                }
+                reader.BaseStream.Seek(OffsetOffset(entry), SeekOrigin.Begin);
+                var offset = reader.ReadBigEndianInt32();
+
+                return new PackIndexEntry(entry.Id, entry.Index, crc, offset);
             }
-
-            return null;
         }
 
         private int CrcOffset(PackIndexEntry entry)

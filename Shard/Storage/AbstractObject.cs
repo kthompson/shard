@@ -1,9 +1,9 @@
-namespace Shard
+namespace Shard.Storage
 {
     /// <summary>
     /// Abstract Object is used to repesent the four primary git objects: Tag, Commit, Blob, Tree
     /// </summary>
-    public abstract class AbstractObject
+    abstract class AbstractObject
     {
         /// <summary>
         /// Gets or sets the id.

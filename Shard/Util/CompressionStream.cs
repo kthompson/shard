@@ -42,7 +42,7 @@ namespace Shard.Util
             stream.WriteByte(0x78);
             stream.WriteByte(0x01);
 
-            return new CompressionStream(stream, CompressionMode.Decompress, leaveOpen);
+            return new CompressionStream(stream, CompressionMode.Compress, leaveOpen);
         }
     }
 }

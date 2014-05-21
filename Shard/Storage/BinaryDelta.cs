@@ -9,7 +9,7 @@ namespace Shard.Storage
     /// GIT project. The original delta patching code was written by Nicolas Pitre
     /// (nico@cam.org).
     /// </summary>
-    public static class BinaryDelta
+    static class BinaryDelta
     {
         ///	<summary>
         /// Apply the changes defined by delta to the data in base, yielding a new

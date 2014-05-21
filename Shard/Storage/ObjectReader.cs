@@ -8,7 +8,7 @@ namespace Shard.Storage
     /// <summary>
     /// A class to read objects from different storages
     /// </summary>
-    public abstract class ObjectReader
+    abstract class ObjectReader
     {
         /// <summary>
         /// Gets or sets the object type.

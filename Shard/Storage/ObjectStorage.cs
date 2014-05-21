@@ -6,7 +6,7 @@ using System.Net;
 
 namespace Shard.Storage
 {
-    internal class ObjectStorage
+    class ObjectStorage
     {
         #region Properties
 
@@ -148,6 +148,7 @@ namespace Shard.Storage
         {
             return Insert(data);
         }
+
         #endregion
     }
 }
