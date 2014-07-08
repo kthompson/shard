@@ -23,7 +23,7 @@ namespace Shard.Storage
         /// <param name="toPath">Contains the path that defines the endpoint of the relative path.</param>
         /// <returns>The relative path from the start directory to the end path.</returns>
         /// <exception cref="ArgumentNullException"></exception>
-        public static String MakeRelativePath(string fromPath, string toPath)
+        public static string MakeRelativePath(string fromPath, string toPath)
         {
             if (string.IsNullOrEmpty(fromPath)) 
                 throw new ArgumentNullException("fromPath");

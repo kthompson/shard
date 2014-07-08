@@ -186,10 +186,10 @@ namespace Shard.Tests
         [Fact]
         public void SessionSavesAndLoadsData()
         {
-            string id;
             IDocumentStore store;
             using (TestHelper.GetDocumentStore(out store))
             {
+                string id;
                 using (var session = store.OpenSession())
                 {
                     var entity = new BasicObject {Value = "Some Value"};

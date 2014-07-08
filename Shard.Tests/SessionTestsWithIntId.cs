@@ -56,7 +56,6 @@ namespace Shard.Tests
             {
                 var id = 123456L;
 
-
                 using (var session = store.OpenSession())
                 {
                     var entity = new BasicObjectWithIntegerId
