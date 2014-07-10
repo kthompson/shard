@@ -1,4 +1,5 @@
 ﻿using System;
+using System.Collections.Generic;
 using System.Linq;
 
 namespace Shard
@@ -46,6 +47,13 @@ namespace Shard
         /// <param name="ids">The ids.</param>
         /// <returns></returns>
         T[] Load<T>(params long[] ids);
+
+        /// <summary>
+        /// Loads all of the entities with the specified type.
+        /// </summary>
+        /// <typeparam name="T"></typeparam>
+        /// <returns></returns>
+        IEnumerable<T> LoadAll<T>();
 
         /// <summary>
         /// Deletes the specified entity from the <see cref="IDocumentStore"/> upon calling SaveChanges.

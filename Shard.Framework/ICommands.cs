@@ -30,5 +30,19 @@ namespace Shard
         /// <param name="id">The identifier.</param>
         /// <returns></returns>
         byte[] Load(string id);
+
+        /// <summary>
+        /// Traverses the rows for the specified type returning the full id of the row.
+        /// </summary>
+        /// <param name="type">The type.</param>
+        /// <returns></returns>
+        IEnumerable<string> TraverseRows(string type);
+
+        /// <summary>
+        /// Gets the key range.
+        /// </summary>
+        /// <param name="type">The type.</param>
+        /// <returns></returns>
+        IKeyGenerator GetKeyRange(string type);
     }
 }

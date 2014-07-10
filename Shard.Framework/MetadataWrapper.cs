@@ -6,10 +6,22 @@ using System.Threading.Tasks;
 
 namespace Shard
 {
-    class MetadataWrapper<T>
+    interface IMetadataWrapper
+    {
+        string Id { get; set; }
+        string Type { get; set; }
+        object GetSource();
+    }
+
+    class MetadataWrapper<T> : IMetadataWrapper
     {
         public string Id { get; set; }
         public string Type { get; set; }
         public T Source { get; set; }
+
+        public object GetSource()
+        {
+            return this.Source;
+        }
     }
 }

@@ -8,7 +8,7 @@ namespace Shard.Tests
     {
         public static IDisposable GetDocumentStore(out IDocumentStore store)
         {
-            var p = Path.Combine(Path.GetTempPath(), Guid.NewGuid().ToString("N"));
+            var p = Path.Combine(Path.GetTempPath(), "Shard", Guid.NewGuid().ToString("N"));
             store = new EmbeddedDocumentStore
             {
                 Path = p

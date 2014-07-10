@@ -51,10 +51,12 @@
     <Compile Include="..\SharedAssemblyInfo.cs">
       <Link>Properties\SharedAssemblyInfo.cs</Link>
     </Compile>
+    <Compile Include="Extensions.cs" />
     <Compile Include="ICommands.cs" />
+    <Compile Include="IKeyGenerator.cs" />
     <Compile Include="MetadataWrapper.cs" />
+    <Compile Include="SerializationHelper.cs" />
     <Compile Include="SessionBase.cs" />
-    <Compile Include="Conventions.cs" />
     <Compile Include="ISession.cs" />
     <Compile Include="IConventions.cs" />
     <Compile Include="IDocumentStore.cs" />

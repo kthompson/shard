@@ -1,4 +1,5 @@
 ﻿using System;
+using System.Linq;
 using Xunit;
 
 namespace Shard.Tests
@@ -42,7 +43,10 @@ namespace Shard.Tests
                     Assert.Equal(3, entities.Length);
 
                     foreach (var entity in entities)
+                    {
+                        Assert.NotNull(entity);
                         Assert.Equal("Object" + entity.Id, entity.Value);
+                    }
                 }
             }
         }
@@ -54,26 +58,24 @@ namespace Shard.Tests
             IDocumentStore store;
             using (TestHelper.GetDocumentStore(out store))
             {
-                var id = 123456L;
+                const long id = 123456L;
 
                 using (var session = store.OpenSession())
                 {
-                    var entity = new BasicObjectWithIntegerId
+                    session.Store(new BasicObjectWithIntegerId
                     {
                         Id = id,
                         Value = "hi",
-                    };
-
-                    session.Store(entity);
+                    });
                     session.SaveChanges(); // will send the change to the database
                 }
-
 
                 using (var session = store.OpenSession())
                 {
                     var entity = session.Load<BasicObjectWithIntegerId>(id);
                     Assert.NotEqual(value, entity.Value);
                     entity.Value = value;
+
                     session.SaveChanges(); // will send the change to the database
                 }
 
@@ -88,24 +90,40 @@ namespace Shard.Tests
         [Fact]
         public void SessionSavesAndLoadsData()
         {
-            long id;
             IDocumentStore store;
             using (TestHelper.GetDocumentStore(out store))
             {
                 using (var session = store.OpenSession())
                 {
-                    var entity = new BasicObjectWithIntegerId {Value = "Some Value"};
-                    session.Store(entity);
+                    session.Store(new BasicObjectWithIntegerId {
+                        Id = 123456,
+                        Value = "Some Value"
+                    });
                     session.SaveChanges();
-                    id = entity.Id;
-                    Assert.NotNull(id);
                 }
 
                 using (var session = store.OpenSession())
                 {
-                    var entity = session.Load<BasicObjectWithIntegerId>(id);
+                    var entity = session.Load<BasicObjectWithIntegerId>(123456);
+                    Assert.NotNull(entity);
                     Assert.Equal("Some Value", entity.Value);
                 }
+            }
+        }
+
+
+        [Fact]
+        public void SessionSetsIdOnSave()
+        {
+            IDocumentStore store;
+            using (TestHelper.GetDocumentStore(out store))
+            using (var session = store.OpenSession())
+            {
+                var entity = new BasicObjectWithIntegerId {Value = "Some Value"};
+                session.Store(entity);
+                session.SaveChanges();
+
+                Assert.NotEqual(0, entity.Id);
             }
         }
 
@@ -130,6 +148,35 @@ namespace Shard.Tests
                 {
                     var entity = session.Load<BasicObjectWithIntegerId>(id);
                     Assert.Null(entity);
+                }
+            }
+        }
+
+        [Fact]
+        public void SessionCanCreateObjectsWithoutIdCollisions()
+        {
+            IDocumentStore store;
+            using (TestHelper.GetDocumentStore(out store))
+            {
+                using (var session = store.OpenSession())
+                {
+                    for (int i = 0; i < 100; i++)
+                    {
+                        session.Store(new BasicObjectWithIntegerId
+                        {
+                            Value = "Some Value" + i
+                        });    
+                    }
+                    
+                    session.SaveChanges();
+                }
+
+                // an id collision would most likely have duplicate ids
+                using (var session = store.OpenSession())
+                {
+                    var items = session.LoadAll<BasicObjectWithIntegerId>();
+
+                    Assert.Equal(100, items.Count());
                 }
             }
         }

@@ -5,6 +5,7 @@ using System.Linq;
 using System.Reflection;
 using System.Text;
 using System.Threading.Tasks;
+using Newtonsoft.Json;
 using Shard.Storage;
 
 namespace Shard
@@ -12,7 +13,7 @@ namespace Shard
     /// <summary>
     /// Basic Local Document Store
     /// </summary>
-    public class EmbeddedDocumentStore : IDocumentStore, ICommands
+    public sealed class EmbeddedDocumentStore : IDocumentStore, ICommands
     {
         private ObjectStorage _objectStorage;
         private RefStorage _refStorage;
@@ -22,78 +23,8 @@ namespace Shard
         /// </summary>
         public EmbeddedDocumentStore()
         {
-            this.Conventions = new Conventions
-            {
-                GetStoragePrefix = DefaultGetStoragePrefix,
-                GetIdProperty = DefaultGetIdProperty,
-                IdForEntity = DefaultGetId,
-                GetFullId = DefaultGetFullId,
-                GetFreeId = DefaultGetFreeId
-            };
+            this.Conventions = new Conventions();
         }
-
-        string DefaultGetFreeId(Type type)
-        {
-            // TODO: need to perform some basic checking if this id exists or not or create something more deterministic
-            var storagePrefix = this.Conventions.GetStoragePrefix(type);
-            return storagePrefix + Guid.NewGuid().ToString("N");
-        }
-
-        #region Default Conventions
-
-        static string DefaultGetStoragePrefix(Type type)
-        {
-            return type.Name.ToLower() + "/";
-        }
-
-        static PropertyInfo DefaultGetIdProperty(Type type)
-        {
-            return type.GetProperty("Id") ?? type.GetProperty("ID");
-        }
-
-        string DefaultGetFullId(Type type, object id)
-        {
-            if (id == null)
-                throw new ArgumentNullException("id");
-
-            if (type == null)
-                throw new ArgumentNullException("type");
-
-            var storagePrefix = this.Conventions.GetStoragePrefix(type);
-
-            if (id is int || id is long)
-            {
-                var lid = (long)id;
-                return storagePrefix + lid;
-            }
-
-            var s = id as string;
-            if (s == null)
-                throw new InvalidOperationException("Id property must be string, int, or long. Found Id of type: " + id.GetType().Name);
-
-            var sid = s;
-            if (sid.Contains("/"))
-                return sid;
-
-            return storagePrefix + id;
-        }
-
-        string DefaultGetId(object entity)
-        {
-            var type = entity.GetType();
-
-            var prop = this.Conventions.GetIdProperty(type);
-            if (prop == null)
-                return null;
-
-            var id = prop.GetValue(entity, null);
-            if (id == null)
-                return null;
-
-            return this.Conventions.GetFullId(type, id);
-        }
-
-        #endregion
 
         #region Public Methods
 
@@ -189,6 +120,76 @@ namespace Shard
         }
 
         /// <summary>
+        /// Traverses the rows for the specified type returning the full id of the row.
+        /// </summary>
+        /// <param name="type">The type.</param>
+        /// <returns></returns>
+        IEnumerable<string> ICommands.TraverseRows(string type)
+        {
+            return this._refStorage.Branches.Where(r => r.Name.StartsWith(type + "/")).Select(r => r.Name);
+        }
+
+        IKeyGenerator ICommands.GetKeyRange(string type)
+        {
+            var cmds = ((ICommands)this);
+            var id = "keys/" + type;
+
+            var keyedIndex = GetKeyIndex(cmds, id) ?? new KeyIndex();
+
+            //get next high value
+            var value = keyedIndex.GetNextValue();
+
+            SaveKeyIndex(cmds, keyedIndex, id);
+
+            return new HiLoRange(value, 10);
+        }
+
+        private static void SaveKeyIndex(ICommands cmds, KeyIndex keyedIndex, string id)
+        {
+            var bytes = SerializationHelper.Serialize(keyedIndex);
+            cmds.Save(id, bytes);
+        }
+
+        private static KeyIndex GetKeyIndex(ICommands cmds, string id)
+        {
+            var keysBytes = cmds.Load(id);
+            if(keysBytes == null)
+                return null;
+
+            return SerializationHelper.Deserialize<KeyIndex>(keysBytes);
+        }
+
+
+        class KeyIndex
+        {
+            public SortedSet<int> HighKeys { get; set; }
+
+            public KeyIndex()
+            {
+                this.HighKeys = new SortedSet<int>();
+            }
+
+            public int GetNextValue()
+            {
+                var value = GetNextHighValue(HighKeys);
+                this.HighKeys.Add(value);
+                return value;
+            }
+
+            private static int GetNextHighValue(ICollection<int> sortedSet)
+            {
+                var i = 1;
+                
+                foreach (var highKey in sortedSet.Where(highKey => highKey != i++))
+                {
+                    return highKey - 1;
+                }
+
+                return sortedSet.Count + 1;
+            }
+        }
+
+        /// <summary>
         /// Performs application-defined tasks associated with freeing, releasing, or resetting unmanaged resources.
         /// </summary>
         public void Dispose()
@@ -201,7 +202,7 @@ namespace Shard
         /// Releases unmanaged and - optionally - managed resources.
         /// </summary>
         /// <param name="disposing"><c>true</c> to release both managed and unmanaged resources; <c>false</c> to release only unmanaged resources.</param>
-        protected virtual void Dispose(bool disposing)
+        private void Dispose(bool disposing)
         {
             if (!disposing)
                 return;

@@ -14,16 +14,16 @@ namespace Shard
         /// <value>
         /// The get identifier property.
         /// </value>
-        Func<Type, PropertyInfo> GetIdProperty { get; set; }
+        PropertyInfo GetIdProperty<T>();
 
 
         /// <summary>
-        /// Gets or sets the function to determine the storage prefix.
+        /// Gets or sets the function to determine the type name/storage prefix.
         /// </summary>
         /// <value>
         /// The get storage prefix.
         /// </value>
-        Func<Type, string> GetStoragePrefix { get; set; }
+        string GetStoragePrefix<T>();
 
 
         /// <summary>
@@ -32,7 +32,7 @@ namespace Shard
         /// <value>
         /// The identifier for entity.
         /// </value>
-        Func<object, string> IdForEntity { get; set; }
+        string GetIdForEntity<T>(T instance);
 
         /// <summary>
         /// Gets or sets the function to convert an identifier to its full notation including the Storage Prefix.
@@ -40,15 +40,6 @@ namespace Shard
         /// <value>
         /// The get full identifier.
         /// </value>
-        Func<Type, object, string> GetFullId { get; set; }
-
-
-        /// <summary>
-        /// Gets or sets the function to get an available Id for the type.
-        /// </summary>
-        /// <value>
-        /// The get free identifier.
-        /// </value>
-        Func<Type, string> GetFreeId { get; set; }
+        string GetFullId<T>(string id);
     }
 }

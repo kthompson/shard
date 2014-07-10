@@ -1,4 +1,5 @@
 using System.IO;
+using System.Runtime.InteropServices;
 using Shard.Util;
 
 namespace Shard.Storage
@@ -12,7 +13,6 @@ namespace Shard.Storage
         public override long Size
         {
             get { return this.Data.Length; }
-            protected set { }
         }
 
         private byte[] _data;
@@ -21,16 +21,13 @@ namespace Shard.Storage
             get { return _data ?? (_data = LoadData()); }
         }
 
-        public override ObjectType Type
-        {
-            get { return this.Base.Type; }
-        }
-
         protected DeltaPackedObjectReader(PackFile packFile, long objectOffset, long dataOffset, long size, PackedObjectReader baseReader)
             : base(packFile, objectOffset, dataOffset, size, ObjectType.Undefined)
         {
             this.Base = baseReader;
             this.RawSize = size;
+
+            _type = this.Base.Type;
         }
 
         public override void Load(ContentLoader contentLoader = null)

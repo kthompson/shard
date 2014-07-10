@@ -33,7 +33,7 @@ namespace Shard.Storage
         /// </value>
         public override string Id
         {
-            get { return base.Id ?? _id ?? (_id = ObjectWriter.ComputeId(this)); }
+            get { return _id ?? (_id = ObjectWriter.ComputeId(this)); }
         }
         /// <summary>
         /// Gets the size of the blob.
@@ -50,8 +50,6 @@ namespace Shard.Storage
         #endregion
 
         #region Private Variables
-        private string _id;
-
         private readonly Lazy<byte[]> _loader;
         #endregion
     }

@@ -1,8 +1,6 @@
 ﻿using System;
 using System.Collections.Generic;
 using System.Linq;
-using System.Text;
-using Newtonsoft.Json;
 
 namespace Shard
 {
@@ -12,7 +10,8 @@ namespace Shard
     abstract class SessionBase : ISession
     {
         protected readonly List<Action> DeferredActions = new List<Action>();
-        protected readonly Dictionary<string, object> TrackedObjects = new Dictionary<string, object>();
+        protected readonly Dictionary<string, IMetadataWrapper> TrackedObjects = new Dictionary<string, IMetadataWrapper>();
+        protected readonly Dictionary<string, IKeyGenerator> KeyGenerators = new Dictionary<string, IKeyGenerator>();
         
         protected IConventions Conventions { get; private set; }
         protected ICommands Commands { get; private set; }
@@ -27,30 +26,50 @@ namespace Shard
 
         public virtual void Store<T>(T entity)
         {
-            var id = this.Conventions.IdForEntity(entity);
-            if (string.IsNullOrEmpty(id))
+            var id = this.Conventions.GetIdForEntity(entity);
+            if (id == null)
             {
-                id = this.Conventions.GetFreeId(entity.GetType());
-                var prop = this.Conventions.GetIdProperty(typeof (T));
-                this.DeferredActions.Add(() => prop.SetValue(entity, id));
+                var intId = this.GetFreeId<T>();
+                id = this.Conventions.GetFullId<T>(intId.ToString());
+                var prop = this.Conventions.GetIdProperty<T>();
+                if (prop.PropertyType == typeof (long))
+                {
+                    this.DeferredActions.Add(() => prop.SetValue(entity, intId));
+                }
+                else
+                {
+                    this.DeferredActions.Add(() => prop.SetValue(entity, id));
+                }
             }
 
-            TrackedObjects[id] = entity;
-        }
-
-        private MetadataWrapper<T> Wrap<T>(string id, T o)
-        {
-            return new MetadataWrapper<T>
+            TrackedObjects[id] = new MetadataWrapper<T>
             {
                 Id = id,
-                Type = o.GetType().Name,
-                Source = o,
+                Source = entity,
+                Type = this.Conventions.GetStoragePrefix<T>()
             };
+        }
+
+        private long GetFreeId<T>()
+        {
+            var prefix = this.Conventions.GetStoragePrefix<T>();
+            var keyGen = this.KeyGenerators.GetOrCreate(prefix, () => this.Commands.GetKeyRange(prefix));
+                
+            var value = keyGen.GetNextId();
+            while (value == null)
+            {
+                keyGen = this.KeyGenerators[prefix] = this.Commands.GetKeyRange(prefix);
+                value = keyGen.GetNextId();
+            }
+
+                
+            return value.Value;
         }
 
         public virtual T Load<T>(string id)
         {
-            id = this.Conventions.GetFullId(typeof (T), id);
+            //id = this.Conventions.GetFullId<T>(id);
+
             if (TrackedObjects.ContainsKey(id))
                 return (T)TrackedObjects[id];
 
@@ -58,16 +77,15 @@ namespace Shard
             if (data == null)
                 return default(T);
 
-            var str = Encoding.UTF8.GetString(data);
-            var wrapped = JsonConvert.DeserializeObject<MetadataWrapper<T>>(str);
+            var wrapped = SerializationHelper.Deserialize<MetadataWrapper<T>>(data);
             var o = wrapped.Source;
-            TrackedObjects[id] = o;
+            TrackedObjects[id] = wrapped;
             return o;
         }
 
         public virtual T Load<T>(long id)
         {
-            return Load<T>(id.ToString());
+            return Load<T>(this.Conventions.GetFullId<T>(id.ToString()));
         }
 
         public virtual T[] Load<T>(params string[] ids)
@@ -77,12 +95,20 @@ namespace Shard
 
         public virtual T[] Load<T>(params long[] ids)
         {
-            return Load<T>(ids.Select(id => id.ToString()).ToArray());
+            return ids.Select(Load<T>).ToArray();
+        }
+
+        public IEnumerable<T> LoadAll<T>()
+        {
+            var typeName = this.Conventions.GetStoragePrefix<T>();
+
+            return from id in this.Commands.TraverseRows(typeName)
+                   select Load<T>(id);
         }
 
         public virtual void Delete<T>(T entity)
         {
-            var id = this.Conventions.IdForEntity(entity);
+            var id = this.Conventions.GetIdForEntity(entity);
             if (TrackedObjects.ContainsKey(id))
                 TrackedObjects.Remove(id);
 
@@ -99,12 +125,10 @@ namespace Shard
             foreach (var action in DeferredActions)
                 action();
 
-            foreach (var id in TrackedObjects.Keys)
+            foreach (var kv in TrackedObjects)
             {
-                var wrapped = Wrap(id, TrackedObjects[id]);
-                var data = JsonConvert.SerializeObject(wrapped);
-                var bytes = Encoding.UTF8.GetBytes(data);
-                this.Commands.Save(id, bytes);
+                var bytes = SerializationHelper.Serialize(kv.Value);
+                this.Commands.Save(kv.Key, bytes);
             }
         }
 

@@ -10,13 +10,19 @@ namespace Shard.Storage
     /// </summary>
     abstract class ObjectReader
     {
+        protected ObjectType _type;
+        private long _size;
+
         /// <summary>
         /// Gets or sets the object type.
         /// </summary>
         /// <value>
         /// The type.
         /// </value>
-        public virtual ObjectType Type { get; protected set; }
+        public ObjectType Type
+        {
+            get { return _type; }
+        }
 
         /// <summary>
         /// Gets or sets the size.
@@ -24,7 +30,10 @@ namespace Shard.Storage
         /// <value>
         /// The size.
         /// </value>
-        public virtual long Size { get; protected set; }
+        public virtual long Size
+        {
+            get { return _size; }
+        }
 
         /// <summary>
         /// A delegate used to deal with loading data
@@ -39,8 +48,8 @@ namespace Shard.Storage
         /// <param name="size">The size.</param>
         protected ObjectReader(ObjectType type, long size)
         {
-            this.Type = type;
-            this.Size = size;
+            _type = type;
+            _size = size;
         }
 
         /// <summary>
