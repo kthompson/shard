@@ -91,11 +91,12 @@ namespace Shard
             this._refStorage.Branches.Remove(id);
         }
 
-        void ICommands.Save(string id, byte[] data)
+        async Task ICommands.SaveAsync(string id, byte[] data)
         {
             ((ICommands)this).Delete(id);
 
-            var sha = this._objectStorage.Write(data);
+            var sha = await this._objectStorage.WriteAsync(data);
+
             var @ref = new Ref
             {
                 Id = sha,
@@ -106,6 +107,11 @@ namespace Shard
             };
 
             this._refStorage.Branches.Add(@ref);
+        }
+
+        void ICommands.Save(string id, byte[] data)
+        {
+            ((ICommands)this).SaveAsync(id, data).Wait();
         }
 
         byte[] ICommands.Load(string id)
@@ -134,9 +140,7 @@ namespace Shard
             var cmds = ((ICommands)this);
             var id = "keys/" + type;
 
-            var keyedIndex = GetKeyIndex(cmds, id) ?? new KeyIndex();
-
-            //get next high value
+            var keyedIndex = GetKeyIndex(cmds, id);
             var value = keyedIndex.GetNextValue();
 
             SaveKeyIndex(cmds, keyedIndex, id);
@@ -147,14 +151,14 @@ namespace Shard
         private static void SaveKeyIndex(ICommands cmds, KeyIndex keyedIndex, string id)
         {
             var bytes = SerializationHelper.Serialize(keyedIndex);
-            cmds.Save(id, bytes);
+            cmds.SaveAsync(id, bytes);
         }
 
         private static KeyIndex GetKeyIndex(ICommands cmds, string id)
         {
             var keysBytes = cmds.Load(id);
             if(keysBytes == null)
-                return null;
+                return new KeyIndex();
 
             return SerializationHelper.Deserialize<KeyIndex>(keysBytes);
         }

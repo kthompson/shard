@@ -3,6 +3,7 @@ using System.Collections.Generic;
 using System.IO;
 using System.Linq;
 using System.Net;
+using System.Threading.Tasks;
 
 namespace Shard.Storage
 {
@@ -127,26 +128,25 @@ namespace Shard.Storage
             return true;
         }
 
-        private string Insert(byte[] data)
+        private async Task<string> InsertAsync(byte[] data)
         {
-            return Insert(ObjectType.Blob, data);
+            return await InsertAsync(ObjectType.Blob, data);
         }
 
-        private string Insert(ObjectType type, byte[] data)
+        private async Task<string> InsertAsync(ObjectType type, byte[] data)
         {
-            string id;
-            var file = ObjectWriter.CreateTempFile(type, data.Length, data, this.ObjectsLocation, out id);
-            InsertUnpacked(file, id);
-            return id;
+            var result = await ObjectWriter.CreateTempFile(type, data.Length, data, this.ObjectsLocation);
+            InsertUnpacked(result.FileInfo, result.ObjectId);
+            return result.ObjectId;
         }
 
         #endregion
 
         #region writers
 
-        public string Write(byte[] data)
+        public async Task<string> WriteAsync(byte[] data)
         {
-            return Insert(data);
+            return await InsertAsync(data);
         }
 
         #endregion

@@ -25,6 +25,13 @@ namespace Shard
         void Save(string id, byte[] data);
 
         /// <summary>
+        /// Saves the specified data with the given identifier.
+        /// </summary>
+        /// <param name="id">The identifier.</param>
+        /// <param name="data">The data.</param>
+        Task SaveAsync(string id, byte[] data);
+
+        /// <summary>
         /// Loads the specified identifier.
         /// </summary>
         /// <param name="id">The identifier.</param>

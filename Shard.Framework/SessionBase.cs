@@ -1,6 +1,7 @@
 ﻿using System;
 using System.Collections.Generic;
 using System.Linq;
+using System.Threading.Tasks;
 
 namespace Shard
 {
@@ -68,8 +69,6 @@ namespace Shard
 
         public virtual T Load<T>(string id)
         {
-            //id = this.Conventions.GetFullId<T>(id);
-
             if (TrackedObjects.ContainsKey(id))
                 return (T)TrackedObjects[id];
 
@@ -125,12 +124,15 @@ namespace Shard
             foreach (var action in DeferredActions)
                 action();
 
-            foreach (var kv in TrackedObjects)
-            {
-                var bytes = SerializationHelper.Serialize(kv.Value);
-                this.Commands.Save(kv.Key, bytes);
-            }
+            Task.WaitAll(TrackedObjects.Select(kv => SaveOneAsync(kv.Key, kv.Value)).ToArray());
         }
+
+        private async Task SaveOneAsync(string key, IMetadataWrapper o)
+        {
+            var bytes = SerializationHelper.Serialize(o);
+            await this.Commands.SaveAsync(key, bytes);
+        }
+
 
         public void Dispose()
         {
