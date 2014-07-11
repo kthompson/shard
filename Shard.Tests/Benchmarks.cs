@@ -39,7 +39,7 @@ namespace Shard.Tests
             }
         }
 
-        [Benchmark]
+        [Benchmark, Trace]
         public void StoringDocumentsShouldBeFast()
         {
             using (var session = _store.OpenSession())
@@ -54,7 +54,7 @@ namespace Shard.Tests
         }
 
 
-        [Benchmark]
+        [Benchmark, Trace]
         public void LoadingDocumentsShouldBeFast()
         {
             using (var session = _store.OpenSession())

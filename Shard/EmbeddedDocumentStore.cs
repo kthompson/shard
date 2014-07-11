@@ -1,4 +1,5 @@
 ﻿using System;
+using System.Collections.Concurrent;
 using System.Collections.Generic;
 using System.IO;
 using System.Linq;
@@ -7,6 +8,7 @@ using System.Text;
 using System.Threading.Tasks;
 using Newtonsoft.Json;
 using Shard.Storage;
+using Shard.Util;
 
 namespace Shard
 {
@@ -135,29 +137,48 @@ namespace Shard
             return this._refStorage.Branches.Where(r => r.Name.StartsWith(type + "/")).Select(r => r.Name);
         }
 
+        private object _keyLock = new object();
+
         IKeyGenerator ICommands.GetKeyRange(string type)
         {
             var cmds = ((ICommands)this);
             var id = "keys/" + type;
 
-            var keyedIndex = GetKeyIndex(cmds, id);
-            var value = keyedIndex.GetNextValue();
+            lock (_keyLock)
+            {
+                var keyedIndex = GetKeyIndex(cmds, id);
+                var value = keyedIndex.GetNextValue();
 
-            SaveKeyIndex(cmds, keyedIndex, id);
+                SaveKeyIndex(cmds, keyedIndex, id);
 
-            return new HiLoRange(value, 10);
+                return new HiLoRange(value, 10);
+            }
         }
 
-        private static void SaveKeyIndex(ICommands cmds, KeyIndex keyedIndex, string id)
+        private void FireSaveKeyIndex(ICommands cmds, KeyIndex keyedIndex, string id)
+        {
+            lock (keyedIndex)
+            {
+                
+            }
+        }
+
+        private void SaveKeyIndex(ICommands cmds, KeyIndex keyedIndex, string id)
         {
             var bytes = SerializationHelper.Serialize(keyedIndex);
             cmds.SaveAsync(id, bytes);
         }
 
-        private static KeyIndex GetKeyIndex(ICommands cmds, string id)
+        private readonly ConcurrentDictionary<string, KeyIndex> _keyIndices = new ConcurrentDictionary<string,KeyIndex>();
+        private KeyIndex GetKeyIndex(ICommands cmds, string id)
+        {
+            return _keyIndices.GetOrAdd(id, s => GetKeyIndexFromDisk(cmds, s));
+        }
+
+        private static KeyIndex GetKeyIndexFromDisk(ICommands cmds, string id)
         {
             var keysBytes = cmds.Load(id);
-            if(keysBytes == null)
+            if (keysBytes == null)
                 return new KeyIndex();
 
             return SerializationHelper.Deserialize<KeyIndex>(keysBytes);
@@ -166,7 +187,7 @@ namespace Shard
 
         class KeyIndex
         {
-            public SortedSet<int> HighKeys { get; set; }
+            public SortedSet<int> HighKeys { get; private set; }
 
             public KeyIndex()
             {

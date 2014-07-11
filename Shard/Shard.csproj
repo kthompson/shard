@@ -74,6 +74,9 @@
     <Compile Include="Storage\Ref.cs" />
     <Compile Include="Storage\RefStorage.cs" />
     <Compile Include="Storage\RefType.cs" />
+    <Compile Include="Util\Disposable.cs" />
+    <Compile Include="Util\KeyedSyncCollection.cs" />
+    <Compile Include="Util\SyncCollection.cs" />
     <Compile Include="Storage\WholePackedObjectReader.cs" />
     <Compile Include="Util\CompressionStream.cs" />
     <Compile Include="Storage\LooseObjectReader.cs" />

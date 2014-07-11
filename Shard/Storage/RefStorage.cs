@@ -2,6 +2,7 @@ using System;
 using System.Collections.Generic;
 using System.IO;
 using System.Linq;
+using Shard.Util;
 
 namespace Shard.Storage
 {
@@ -133,29 +134,35 @@ namespace Shard.Storage
         void Remove(string refName);
     }
 
-    class RefCollection : CustomActionCollection<Ref>, IRefCollection
+    class RefCollection : SyncCollection<Ref>, IRefCollection
     {
         private readonly RefType _type;
 
         public RefCollection(RefType type,  IEnumerable<Ref> initial)
-            : base(null, null)
         {
             _type = type;
-            this.InternalList.AddRange(initial);
+            
+            using (this.CreateWriteBlock())
+            {
+                foreach (var @ref in initial)
+                    this.Add(@ref);
+            }
         }
 
-        protected override void OnItemAdded(Ref item)
+        protected override void InsertItem(int index, Ref item)
         {
-            base.OnItemAdded(item);
+            base.InsertItem(index, item);
             item.Type = _type;
 
             if (!File.Exists(item.Location))
                 item.Save();
         }
 
-        protected override void OnItemRemoved(Ref item)
+        protected override void RemoveItem(int index)
         {
-            base.OnItemRemoved(item);
+            var item = this.InternalCollection[index];
+
+            base.RemoveItem(index);
 
             if (File.Exists(item.Location))
                 item.Delete();
@@ -165,15 +172,21 @@ namespace Shard.Storage
         {
             get
             {
-                return this.FirstOrDefault(r => r.Name == refName || r.Location == refName);
+                using (this.CreateReadBlock())
+                {
+                    return this.FirstOrDefault(r => r.Name == refName || r.Location == refName);
+                }
             }
         }
 
         public void Remove(string refName)
         {
-            var r = this[refName];
-            if (r != null)
-                this.Remove(r);
+            using (this.CreateWriteBlock())
+            {
+                var r = this[refName];
+                if (r != null)
+                    this.Remove(r);
+            }
         }
     }
 }

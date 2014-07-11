@@ -10,7 +10,7 @@ namespace Shard.Tests
 {
     public class SessionTests
     {
-        [Fact]
+        [Fact(Skip = "Not yet implemented")]
         public void SessionIsQueryable()
         {
             IDocumentStore store;
